@@ -4,35 +4,24 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
-
-
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import static java.net.Proxy.Type.HTTP;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -76,8 +65,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v2)
             {
+                showAlertDialog();
+
                 String useruuid = null;
                 useruuid = GetDevicesUUID(getBaseContext());
+                TextView uuid = (TextView) findViewById(R.id.uuid);
+                uuid.setText(useruuid);
             }
         });
 
@@ -90,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                final String[] items = new String[]{"Indoor", "Outdoor"};
+                final String[] items = new String[]{"실내(집 안)", "실외(집 밖)"};
                 final int[] selectedIndex={0};
 
                 AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
@@ -159,6 +152,28 @@ public class MainActivity extends AppCompatActivity {
 
         Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
         lastTimeBackPressed = System.currentTimeMillis();
+    }
+
+    private void showAlertDialog(){
+        LayoutInflater vi = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LinearLayout loginLayout = (LinearLayout)vi.inflate(R.layout.dialog_verify, null);
+
+        final EditText input_house_number=(EditText)loginLayout.findViewById(R.id.input_house_num);
+        final EditText input_house_psw=(EditText)loginLayout.findViewById(R.id.input_house_psw);
+
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+
+        adb.setTitle("인증");
+        adb.setView(loginLayout);
+        adb.setNeutralButton("OK", new DialogInterface.OnClickListener(){
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(MainActivity.this, "House Number : " +
+                        input_house_number.getText().toString() + "\nHouse Password : " +
+                        input_house_psw.getText().toString(), Toast.LENGTH_LONG).show();
+            }
+        }).show();
+
     }
 
 }
