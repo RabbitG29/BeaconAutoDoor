@@ -1,5 +1,6 @@
 package com.example.kdh.beacontest;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -7,26 +8,41 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 
 
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import static java.net.Proxy.Type.HTTP;
 
 public class MainActivity extends AppCompatActivity {
 
     private long lastTimeBackPressed;
     private Button btn_Connect;
-
+    private Button modifybutton;
     private bluetooth bluetoothService_obj = null;
+    private Button verifybutton;
     private static final String TAG = "MAIN";
+
 
 
     private final Handler mHandler = new Handler() {
@@ -37,10 +53,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private Button modifybutton;
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
 
         btn_Connect = (Button) findViewById(R.id.bluetoothbutton);
         btn_Connect.setOnClickListener(bluetooth.mClickListener);
@@ -57,12 +70,14 @@ public class MainActivity extends AppCompatActivity {
             bluetoothService_obj = new bluetooth(this, mHandler);
         }
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        verifybutton = (Button) findViewById(R.id.verifybutton);
+        verifybutton.setOnClickListener(new View.OnClickListener(){
+
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void onClick(View v2)
+            {
+                String useruuid = null;
+                useruuid = GetDevicesUUID(getBaseContext());
             }
         });
 
@@ -123,6 +138,16 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private String GetDevicesUUID(Context mContext){
+        final TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+        final String tmDevice, tmSerial, androidId;
+        tmDevice = "" + tm.getDeviceId();
+        tmSerial = "" + tm.getSimSerialNumber();
+        androidId = "" + android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+        UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
+        String deviceId = deviceUuid.toString();
+        return deviceId;
+    }
     @Override
     public void onBackPressed()
     {
