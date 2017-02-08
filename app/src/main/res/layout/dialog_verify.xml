@@ -22,6 +22,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/input_house_num"
+            android:imeOptions="actionNext"
+            android:inputType="text"
             />
     </LinearLayout>
 
@@ -43,6 +45,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/input_house_psw"
+            android:imeOptions="actionDone"
+            android:inputType="text"
             />
     </LinearLayout>
 </LinearLayout>
