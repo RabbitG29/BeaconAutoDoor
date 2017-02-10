@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private Button verifybutton;
     private static final String TAG = "MAIN";
 
-    String response, address; //연결시 사용할 주소와 response
+    String response, serv_addr, address; //연결시 사용할 주소와 response
 
     private final Handler mHandler = new Handler() {
 
@@ -65,68 +65,75 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    public boolean CheckAppFirstExecute(){
+        SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
+        boolean isFirst = pref.getBoolean("isFirst", false);
+        if(!isFirst){ //최초 실행시 true 저장
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putBoolean("isFirst", true);
+            editor.commit();
+            showAlertDialog();
+        }
+
+        return !isFirst;
+    }
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e(TAG,"onCreate");
+        Log.e(TAG, "onCreate");
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        address = "http://211.222.232.176:3001";// Node.js 연결 test용 주소
+        serv_addr = "http://211.222.232.176:3001";// Node.js 연결
+        address = "";
+        response = "";
 
+        CheckAppFirstExecute();
 
+        //1번 버튼
         btn_Connect = (Button) findViewById(R.id.bluetoothbutton);
         btn_Connect.setOnClickListener(bluetooth.mClickListener);
-
-
-        if (bluetoothService_obj==null) {
+        if (bluetoothService_obj == null) {
             bluetoothService_obj = new bluetooth(this, mHandler);
         }
 
+        //2번 버튼
         verifybutton = (Button) findViewById(R.id.verifybutton);
         verifybutton.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v2) {
-                showAlertDialog();
-
-                String useruuid = null;
-                useruuid = GetDevicesUUID(getBaseContext());
-                TextView uuid = (TextView) findViewById(R.id.uuid);
-                uuid.setText(useruuid);
+                showAlertDialog();  //집 정보 받기, 추후에 사용
 
 
+                //통신
             }
         });
 
-        final List selectedItem = new ArrayList();
+        //final List selectedItem = new ArrayList();
 
+        //3번 버튼
         modifybutton = (Button) findViewById(R.id.modifybutton);
-
-        modifybutton.setOnClickListener(new View.OnClickListener()
-        {
+        modifybutton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 final String[] items = new String[]{"실내(집 안)", "실외(집 밖)"};
-                final int[] selectedIndex={0};
+                final int[] selectedIndex = {0};
 
                 AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
-                dialog .setTitle("현재 위치를 설정해 주세요")
-                        .setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener()
-                        {
+                dialog.setTitle("현재 위치를 설정해 주세요")
+                        .setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {
                             @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
-                                selectedIndex[0]=which;
+                            public void onClick(DialogInterface dialog, int which) {
+                                selectedIndex[0] = which;
                             }
                         })
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener()
-                        {
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
+                            public void onClick(DialogInterface dialog, int which) {
                                 Toast.makeText(MainActivity.this, items[selectedIndex[0]], Toast.LENGTH_SHORT).show();
                             }
                         }).create().show();
@@ -157,21 +164,20 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private String GetDevicesUUID(Context mContext){
+    private String GetDevicesUUID(Context mContext) {
         final TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         final String tmDevice, tmSerial, androidId;
         tmDevice = "" + tm.getDeviceId();
         tmSerial = "" + tm.getSimSerialNumber();
         androidId = "" + android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-        UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
+        UUID deviceUuid = new UUID(androidId.hashCode(), ((long) tmDevice.hashCode() << 32) | tmSerial.hashCode());
         String deviceId = deviceUuid.toString();
         return deviceId;
     }
+
     @Override
-    public void onBackPressed()
-    {
-        if(System.currentTimeMillis()-lastTimeBackPressed<1500)
-        {
+    public void onBackPressed() {
+        if (System.currentTimeMillis() - lastTimeBackPressed < 1500) {
             finish();
             return;
         }
@@ -183,14 +189,33 @@ public class MainActivity extends AppCompatActivity {
 
     /*Android <-> Node.js 통신을 위한 AsyncTask*/
     class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        protected void onPreExecute() {
+            String useruuid = null;     //uuid 받아오기
+            useruuid = GetDevicesUUID(getBaseContext());
+            address = serv_addr + "/verify?uuid=" + useruuid;
+            TextView print_uuid = (TextView) findViewById(R.id.uuid);
+            print_uuid.setText(useruuid);
+        }
+
         @Override
         protected Integer doInBackground(Integer... arg0) {
             // TODO Auto-generated method stub
-            Log.e("response", "doInBackground pass");
             response = request(address);
             Log.e("response", "get response data");
             Log.e("response", response);
             return null;
+        }
+
+        protected void onPostExecute(Integer a) {
+            TextView btn_verify = (TextView) findViewById(R.id.verifybutton);
+            Log.e("response", "before compareTo : " + response);
+            if (response.compareTo("true") == 1) {
+                btn_verify.setText("Verified!!");
+                btn_verify.setEnabled(false);
+            } else if (response.compareTo("false") == 1) {
+                btn_verify.setText("Fail to Verify, Retry");
+            }
+            address = "";
         }
     }
 
@@ -200,27 +225,24 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder output = new StringBuilder();
         try {
             URL url = new URL(urlStr);
-            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-            //HttpsURLConnection conn = null;
-            //conn = postHttps(urlStr, 10000, 10000);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
                 Log.e("response", "connected!!");
-                //conn = postHttps(urlStr, 10000, 10000);
-                conn.setConnectTimeout(10000);
+                //conn.setConnectTimeout(10000);
                 conn.setRequestMethod("GET");
                 conn.setDoInput(true);
-                //conn.setDoOutput(true);
+                //conn.setDoOutput(true);   //방식이 post로 바뀌게 됨
 
-                Log.e("response", "HTTP_OK : "+Integer.toString(HttpURLConnection.HTTP_OK));
-                Log.e("response", "address : "+ address);
+                Log.e("response", "HTTP_OK : " + Integer.toString(HttpURLConnection.HTTP_OK));
+                Log.e("response", "address : " + address);
                 int resCode = conn.getResponseCode();       //문제점......
-                Log.e("response", "resCode : "+Integer.toString(resCode));
+                Log.e("response", "resCode : " + Integer.toString(resCode));
 
                 if (resCode == HttpURLConnection.HTTP_OK) {
                     Log.e("response", "HTTP_OK!!");
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream())) ;
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     String line = null;
-                    while(true) {
+                    while (true) {
                         line = reader.readLine();
                         if (line == null) {
                             break;
@@ -232,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
                     conn.disconnect();
                 }
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             Log.e("SampleHTTP", "Exception in processing response.", ex);
             ex.printStackTrace();
         }
@@ -240,29 +262,25 @@ public class MainActivity extends AppCompatActivity {
         return output.toString();
     }
 
-    private void showAlertDialog(){
-        LayoutInflater vi = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        LinearLayout loginLayout = (LinearLayout)vi.inflate(R.layout.dialog_verify, null);
+    private void showAlertDialog() {
+        LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LinearLayout loginLayout = (LinearLayout) vi.inflate(R.layout.dialog_verify, null);
 
-        final EditText input_house_number=(EditText)loginLayout.findViewById(R.id.input_house_num);
-        final EditText input_house_psw=(EditText)loginLayout.findViewById(R.id.input_house_psw);
+        final EditText input_house_number = (EditText) loginLayout.findViewById(R.id.input_house_num);
+        final EditText input_house_psw = (EditText) loginLayout.findViewById(R.id.input_house_psw);
 
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         Log.e("response", "showAlertDialog pass");
 
         adb.setTitle("인증");
         adb.setView(loginLayout);
-        adb.setNeutralButton("OK", new DialogInterface.OnClickListener(){
+        adb.setNeutralButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) { //button 클릭시 connect
+
+
                 BackgroundTask task = new BackgroundTask();
                 task.execute();
-                //Log.e("response", response);
-
-                /*String html;
-                html = DownloadHtml("http://211.222.232.176:3001");
-                TextView result = (TextView) findViewById(R.id.TestText);
-                result.setText(html);*/
 
                 Toast.makeText(MainActivity.this, "집 호수 : " +
                         input_house_number.getText().toString() + "\n비밀번호 : " +
