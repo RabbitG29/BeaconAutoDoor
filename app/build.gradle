@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
     defaultConfig {
-        applicationId "com.example.kdh.beaconautodoor"
+        applicationId "com.mfics.kdh.beaconautodoor"
         minSdkVersion 15
         targetSdkVersion 22
         versionCode 1
