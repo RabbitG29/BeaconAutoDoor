@@ -70,6 +70,27 @@ public class bluetooth {
         }
     }
 
+    public static void firstEnableBluetooth()
+    {
+        Log.i(TAG, "Check the enable Bluetooth");
+
+        if(btAdapter.isEnabled())
+        {
+            //기기의 블루투스 상태가 On일 경우..
+            Log.d(TAG, "Bluetooth Enable Now");
+
+
+        }
+        else
+        {
+            //기기의 블루투스 상태가 off일 경우
+            Log.d(TAG, "Bluetooth Enable Request");
+
+            Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            mActivity.startActivityForResult(i, REQUEST_ENABLE_BT);
+        }
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         Log.d(TAG, "onActivityResult" + resultCode);

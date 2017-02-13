@@ -17,38 +17,34 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Beacon"
-        android:textSize="50dp"
+        android:textSize="50sp"
         android:id="@+id/textView"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/uuid"
-        />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/TestText"
+        android:textSize="30sp"
+        android:id="@+id/verifyText"
+        android:layout_below="@+id/textView"
+        android:layout_marginBottom="30dp"
+        android:layout_centerHorizontal="true"
         />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/BeaconTest"
-        />
-
 
 
     <Button
+        android:onClick="onClick"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="2. 인증"
+        android:text="2. 현재 위치 설정"
         android:textSize="30sp"
-        android:id="@+id/verifybutton"
-        android:layout_centerVertical="true"
+        android:id="@+id/modifybutton"
+
+
+        android:layout_marginTop="70dp"
+        android:layout_below="@+id/bluetoothbutton"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
@@ -59,22 +55,9 @@
         android:text="1. 블루투스 켜기/끄기"
         android:textSize="30sp"
         android:id="@+id/bluetoothbutton"
-        android:layout_marginBottom="35dp"
 
-        android:layout_above="@+id/verifybutton"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        android:onClick="onClick"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="3. 현재 위치 설정"
-        android:textSize="30sp"
-        android:id="@+id/modifybutton"
-        android:layout_marginTop="41dp"
-
-        android:layout_below="@+id/verifybutton"
+        android:layout_marginTop="35dp"
+        android:layout_below="@+id/verifyText"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
