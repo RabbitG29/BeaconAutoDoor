@@ -35,22 +35,21 @@ import java.net.URL;
 public class MainActivity extends AppCompatActivity {
 
     private long lastTimeBackPressed;
-    private Button btn_Connect;
-    private Button modifybutton;
+    private Button connBluetoothButton;
+    private Button modifyInOrOutButton;
     private bluetooth bluetoothService_obj = null;
-    private Button verifybutton;
+    //private Button verifybutton;
     private static final String TAG = "MAIN";
-
-    String response, serv_addr, address; //연결시 사용할 주소와 response
+    final static String SERV_URL = "http://211.222.232.176:3001";// server URL 상수 선언
 
     private final Handler mHandler = new Handler() {
-
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
         }
     };
 
-
+    /* 최초 실행 검사 */
+    /*
     public boolean CheckAppFirstExecute(){
         SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
         boolean isFirst = pref.getBoolean("isFirst", false);
@@ -58,13 +57,11 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences.Editor editor = pref.edit();
             editor.putBoolean("isFirst", true);
             editor.commit();
-            showAlertDialog();
+            //verifyDialog();
         }
-
         return !isFirst;
     }
-
-
+    */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,36 +71,32 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        serv_addr = "http://211.222.232.176:3001";// Node.js 연결
-        address = "";
-        response = "";
+        //CheckAppFirstExecute();//Bluetooth 연결 chk
 
-        CheckAppFirstExecute();
+        chkUuidBackgroundTask task = new chkUuidBackgroundTask();//verify chk
+        task.execute();
 
         //1번 버튼
-        btn_Connect = (Button) findViewById(R.id.bluetoothbutton);
-        btn_Connect.setOnClickListener(bluetooth.mClickListener);
+        connBluetoothButton = (Button) findViewById(R.id.bluetoothbutton);
+        connBluetoothButton.setOnClickListener(bluetooth.mClickListener);
         if (bluetoothService_obj == null) {
             bluetoothService_obj = new bluetooth(this, mHandler);
         }
 
         //2번 버튼
+        /*
         verifybutton = (Button) findViewById(R.id.verifybutton);
         verifybutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v2) {
-                showAlertDialog();  //집 정보 받기, 추후에 사용
-
-
-                //통신
+                verifyDialog();  //집 정보 입력 및 인증
             }
         });
-
-        //final List selectedItem = new ArrayList();
+        */
 
         //3번 버튼
-        modifybutton = (Button) findViewById(R.id.modifybutton);
-        modifybutton.setOnClickListener(new View.OnClickListener() {
+        modifyInOrOutButton = (Button) findViewById(R.id.modifybutton);
+        modifyInOrOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final String[] items = new String[]{"실내(집 안)", "실외(집 밖)"};
@@ -128,6 +121,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /* 오른쪽 상단 Menu 설정 */
+    /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -141,15 +136,15 @@ public class MainActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
+    */
 
+    /* UUiD 받아오기 */
     private String GetDevicesUUID(Context mContext) {
         final TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         final String tmDevice, tmSerial, androidId;
@@ -161,24 +156,26 @@ public class MainActivity extends AppCompatActivity {
         return deviceId;
     }
 
+    /* 뒤로가기 두번 누르면 종료 */
     @Override
     public void onBackPressed() {
         if (System.currentTimeMillis() - lastTimeBackPressed < 1500) {
             finish();
             return;
         }
-
         Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
         lastTimeBackPressed = System.currentTimeMillis();
     }
 
 
     /*Android <-> Node.js 통신을 위한 AsyncTask*/
-    class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+    class chkUuidBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        String reqAddress = "";
+        String response = "";
         protected void onPreExecute() {
             String useruuid = null;     //uuid 받아오기
             useruuid = GetDevicesUUID(getBaseContext());
-            address = serv_addr + "/verify?uuid=" + useruuid;
+            reqAddress = SERV_URL + "/verify?uuid=" + useruuid;
             TextView print_uuid = (TextView) findViewById(R.id.uuid);
             print_uuid.setText(useruuid);
         }
@@ -186,42 +183,40 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Integer doInBackground(Integer... arg0) {
             // TODO Auto-generated method stub
-            response = request(address);
+            Log.e("response", "reqAddress : " + reqAddress);
+            response = request(reqAddress);
             Log.e("response", "get response data");
             Log.e("response", response);
             return null;
         }
 
         protected void onPostExecute(Integer a) {
-            TextView btn_verify = (TextView) findViewById(R.id.verifybutton);
+            TextView verifyButton = (TextView) findViewById(R.id.verifybutton);
             Log.e("response", "before compareTo : " + response);
             if (response.compareTo("true") == 1) {
-                btn_verify.setText("Verified!!");
-                btn_verify.setEnabled(false);
+                verifyButton.setText("Verified!!");
+                verifyButton.setEnabled(false);
             } else if (response.compareTo("false") == 1) {
-                btn_verify.setText("Fail to Verify, Retry");
+                verifyButton.setText("Fail to Verify, Retry");
+                verifyDialog();  //집 정보 입력 및 인증
             }
-            address = "";
+            reqAddress = "";
         }
     }
 
     /* request 요청 및 response를 받아 반환*/
     private String request(String urlStr) {
-        Log.e("response", "request pass");
         StringBuilder output = new StringBuilder();
         try {
             URL url = new URL(urlStr);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
-                Log.e("response", "connected!!");
                 //conn.setConnectTimeout(10000);
                 conn.setRequestMethod("GET");
                 conn.setDoInput(true);
                 //conn.setDoOutput(true);   //방식이 post로 바뀌게 됨
 
-                Log.e("response", "HTTP_OK : " + Integer.toString(HttpURLConnection.HTTP_OK));
-                Log.e("response", "address : " + address);
-                int resCode = conn.getResponseCode();       //문제점......
+                int resCode = conn.getResponseCode();
                 Log.e("response", "resCode : " + Integer.toString(resCode));
 
                 if (resCode == HttpURLConnection.HTTP_OK) {
@@ -248,7 +243,8 @@ public class MainActivity extends AppCompatActivity {
         return output.toString();
     }
 
-    private void showAlertDialog() {
+
+    private void verifyDialog() {
         LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         LinearLayout loginLayout = (LinearLayout) vi.inflate(R.layout.dialog_verify, null);
 
@@ -256,7 +252,6 @@ public class MainActivity extends AppCompatActivity {
         final EditText input_house_psw = (EditText) loginLayout.findViewById(R.id.input_house_psw);
 
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
-        Log.e("response", "showAlertDialog pass");
 
         adb.setTitle("인증");
         adb.setView(loginLayout);
@@ -265,68 +260,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) { //button 클릭시 connect
 
 
-                BackgroundTask task = new BackgroundTask();
-                task.execute();
-
                 Toast.makeText(MainActivity.this, "집 호수 : " +
                         input_house_number.getText().toString() + "\n비밀번호 : " +
                         input_house_psw.getText().toString(), Toast.LENGTH_LONG).show();
 
             }
-            /*
-            private String DownloadHtml(String addr) {
-                StringBuilder html = new StringBuilder();
-                try {
-                    //인터넷상의 자원이나 서비스 주소값을 URL 객체로 생성합니다.
-                    URL url = new URL(addr);
-
-                    //해당 UTL로 접속합니다.
-                    //접속에 성공하면 양방향 통신이 가능한 연결 객체(HttpURLConnection)가 리턴됩니다.
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-                    if (conn != null) {
-                        //연결 제한 시간을 1/1000 초 단위로 지정합니다.
-                        //0이면 무한 대기입니다.
-                        conn.setConnectTimeout(10000);
-
-                        //읽기 제한 시간을 지정합니다. 0이면 무한 대기합니다.
-                        //conn.setReadTimeout(0);
-
-                        //캐쉬 사용여부를 지정합니다.
-                        conn.setUseCaches(false);
-
-                        //http 연결의 경우 요청방식을 지정할수 있습니다.
-                        //지정하지 않으면 디폴트인 GET 방식이 적용됩니다.
-                        //conn.setRequestMethod("GET" | "POST");
-
-                        //서버에 요청을 보내가 응답 결과를 받아옵니다.
-                        int resCode = conn.getResponseCode();
-
-                        //요청이 정상적으로 전달되엇으면 HTTP_OK(200)이 리턴됩니다.
-                        //URL이 발견되지 않으면 HTTP_NOT_FOUND(404)가 리턴됩니다.
-                        //인증에 실패하면 HTTP_UNAUTHORIZED(401)가 리턴됩니다.
-                        if (resCode == HttpURLConnection.HTTP_OK) {
-
-                            //요청에 성공했으면 getInputStream 메서드로 입력 스트림을 얻어 서버로부터 전송된 결과를 읽습니다.
-                            InputStreamReader isr = new InputStreamReader(conn.getInputStream());
-
-                            //스트림을 직접읽으면 느리고 비효율 적이므로 버퍼를 지원하는 BufferedReader 객체를 사용합니다.
-
-                            BufferedReader br = new BufferedReader(isr);
-                            for (; ; ) {
-                                String line = br.readLine();
-                                if (line == null) break;
-                                html.append(line + "\n");
-                            }
-                            br.close();
-                        }
-                    }
-                    conn.disconnect();
-                } catch (Exception e) {
-                }
-                //html 이 리턴값
-                return html.toString();
-            }*/
         }).show();
 
     }
