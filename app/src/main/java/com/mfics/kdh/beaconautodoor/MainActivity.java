@@ -1,7 +1,5 @@
 package com.mfics.kdh.beaconautodoor;
 
-// modified by KDH on 2017-02-10
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -21,6 +19,8 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.DialogInterface;
@@ -38,17 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private Button connBluetoothButton;
     private Button modifyInOrOutButton;
     private bluetooth bluetoothService_obj = null;
-    //private Button verifybutton;
-    private static final String TAG = "MAIN";
     final static String SERV_URL = "http://211.222.232.176:3001";// server URL 상수 선언
 
-    private final Handler mHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-        }
-    };
-
-    /* 최초 실행 검사 */
+    /* 최초 실행 검사 Service, 앱 실행시 인증을 통해 검사방식으로 대체 */
     /*
     public boolean CheckAppFirstExecute(){
         SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
@@ -66,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e(TAG, "onCreate");
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -77,28 +68,21 @@ public class MainActivity extends AppCompatActivity {
             bluetooth.firstEnableBluetooth();  //블루투스 활성화 시작.
         }
 
-        chkUuidBackgroundTask task = new chkUuidBackgroundTask();//verify chk
+        chkUuidBackgroundTask task = new chkUuidBackgroundTask();//앱 실행시 Verify
         task.execute();
 
         //1번 버튼
         connBluetoothButton = (Button) findViewById(R.id.bluetoothbutton);
         connBluetoothButton.setOnClickListener(bluetooth.mClickListener);
         if (bluetoothService_obj == null) {
-            bluetoothService_obj = new bluetooth(this, mHandler);
+            bluetoothService_obj = new bluetooth(this, new Handler() {
+                public void handleMessage(Message msg) {
+                    super.handleMessage(msg);
+                }
+            });
         }
 
         //2번 버튼
-        /*
-        verifybutton = (Button) findViewById(R.id.verifybutton);
-        verifybutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v2) {
-                verifyDialog();  //집 정보 입력 및 인증
-            }
-        });
-        */
-
-        //3번 버튼
         modifyInOrOutButton = (Button) findViewById(R.id.modifybutton);
         modifyInOrOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -170,39 +154,33 @@ public class MainActivity extends AppCompatActivity {
         lastTimeBackPressed = System.currentTimeMillis();
     }
 
+    private void verifyDialog() {
+        LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final LinearLayout addUserLayout = (LinearLayout) vi.inflate(R.layout.dialog_verify, null);
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle("주민 인증 및 등록");
+        adb.setView(addUserLayout);
 
-    /*Android <-> Node.js 통신을 위한 AsyncTask*/
-    class chkUuidBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
-        String reqAddress = "";
-        String response = "";
-        protected void onPreExecute() {
-            String useruuid = null;     //uuid 받아오기
-            useruuid = GetDevicesUUID(getBaseContext());
-            reqAddress = SERV_URL + "/verify?uuid=" + useruuid;
+        adb.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                int where = 1;
+                //addUserLayout이라 작명한 Layout을 지정해야 id로부터 VIew를 받아 올 수 있으며, 지정해주지 않으면 nullpointerException 오류 발생
+                EditText houseNum = (EditText) addUserLayout.findViewById(R.id.input_house_num);
+                EditText password = (EditText) addUserLayout.findViewById(R.id.input_house_psw);
+                RadioButton inside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_in);
+                RadioButton outside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_out);
+                if(inside.isChecked()) where = -1;  //안이면 -1
+                else if(outside.isChecked()) where = 1;//밖이면 1
 
-        }
+                //생성시 인자로 정보들을 넘겨줌
+                addUserBackgroundTask task = new addUserBackgroundTask(houseNum.getText().toString(), password.getText().toString(), where);
+                task.execute();
 
-        @Override
-        protected Integer doInBackground(Integer... arg0) {
-            // TODO Auto-generated method stub
-            Log.e("response", "reqAddress : " + reqAddress);
-            response = request(reqAddress);
-            Log.e("response", "get response data");
-            Log.e("response", response);
-            return null;
-        }
-
-        protected void onPostExecute(Integer a) {
-            TextView verifyText = (TextView) findViewById(R.id.verifyText);
-            Log.e("response", "before compareTo : " + response);
-            if (response.compareTo("true") == 1) {
-                verifyText.setText("인증됨!!");
-            } else if (response.compareTo("false") == 1) {
-                verifyText.setText("인증실패, 재시도");
-                verifyDialog();  //집 정보 입력 및 인증
+                houseNum.setText("");
+                password.setText("");
             }
-            reqAddress = "";
-        }
+        }).show();
     }
 
     /* request 요청 및 response를 받아 반환*/
@@ -244,32 +222,97 @@ public class MainActivity extends AppCompatActivity {
         return output.toString();
     }
 
+    /*Android <-> Node.js 통신을 위한 AsyncTask*/
+    /* Verify UUID */
+    class chkUuidBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        String reqAddress = "";
+        String response = "";
 
-    private void verifyDialog() {
-        LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        LinearLayout loginLayout = (LinearLayout) vi.inflate(R.layout.dialog_verify, null);
-
-        final EditText input_house_number = (EditText) loginLayout.findViewById(R.id.input_house_num);
-        final EditText input_house_psw = (EditText) loginLayout.findViewById(R.id.input_house_psw);
-
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
-
-        adb.setTitle("인증");
-        adb.setView(loginLayout);
-        adb.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) { //button 클릭시 connect
-
-                chkUuidBackgroundTask task = new chkUuidBackgroundTask();//verify chk
-                task.execute();
-
-                Toast.makeText(MainActivity.this, "집 호수 : " +
-                        input_house_number.getText().toString() + "\n비밀번호 : " +
-                        input_house_psw.getText().toString(), Toast.LENGTH_LONG).show();
-
+        protected void onPreExecute() {
+            String useruuid = null;     //uuid 받아오기
+            useruuid = GetDevicesUUID(getBaseContext());
+            reqAddress = SERV_URL + "/verify?uuid=" + useruuid;
+        }
+        @Override
+        protected Integer doInBackground(Integer... arg0) {
+            // TODO Auto-generated method stub
+            Log.e("response", "reqAddress : " + reqAddress);
+            response = request(reqAddress);
+            Log.e("response", "get response data");
+            Log.e("response", response);
+            return null;
+        }
+        protected void onPostExecute(Integer a) {
+            TextView verifyText = (TextView) findViewById(R.id.verifyText);
+            Log.e("response", "before compareTo : " + response);
+            if (response.compareTo("true") == 1) {
+                verifyText.setText("인증됨!!");
+            } else if (response.compareTo("false") == 1) {
+                verifyText.setText("인증실패, 재시도");
+                verifyDialog();  //집 정보 입력 및 인증
+            }else {
+                verifyText.setText("Server closed");
             }
-        }).show();
+            reqAddress = "";
+        }
+    }
+    /* Add User, Dialog에서 집호수, 비밀번호, 현재 밖인지 안인지에 대한 정보를 받아 비밀번호 검사 후 UUID 등록 */
+    class addUserBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        String address = SERV_URL;
+        String response = "";
+        String houseNum, password, whereis;
 
+        //Dialog로부터 정보를 받아서 시작
+        public addUserBackgroundTask(String house_num, String passwd, int where){
+            houseNum = house_num;
+            password = passwd;
+            whereis = Integer.toString(where);
+        }
+
+        protected void onPreExecute() { //URL에 집호수, password, 위치정보, UUID 추가
+            String useruuid = GetDevicesUUID(getBaseContext());
+            address = address + "/addUser?housenum=" + houseNum + "&passwd=" + password +"&uuid=" + useruuid + "&whereis="+whereis;
+        }
+        @Override
+        protected Integer doInBackground(Integer... arg0) {
+            // TODO Auto-generated method stub
+            Log.e("response", "Add user address : "+address);
+            response = request(address);
+            return null;
+        }
+        protected void onPostExecute(Integer a) {
+            TextView verifyText = (TextView) findViewById(R.id.verifyText);
+            if (response.compareTo("true") == 1) {
+                verifyText.setText("인증됨!!");
+                Toast.makeText(MainActivity.this, "집 호수 : " +
+                        houseNum + "\n비밀번호 : " +
+                        password +"\n인증되었습니다.", Toast.LENGTH_LONG).show();
+            } else if (response.compareTo("invalid") == 1) {
+                Toast.makeText(MainActivity.this, "집 호수 : " +
+                        houseNum + "\n비밀번호 : " +
+                        password +"\n인증 실패", Toast.LENGTH_LONG).show();
+                verifyDialog();  //집 정보 재입력 및 인증
+            }else{
+                verifyText.setText("Server closed");
+                Log.e("response", response);
+            }
+            address = SERV_URL;
+        }
     }
 
+    /* BackgroundTask 기본 소스
+    class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        protected void onPreExecute() {
+
+        }
+        @Override
+        protected Integer doInBackground(Integer... arg0) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        protected void onPostExecute(Integer a) {
+        }
+    }
+    */
 }
