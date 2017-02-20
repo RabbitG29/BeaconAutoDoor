@@ -26,17 +26,7 @@ import android.widget.Toast;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 
-<<<<<<< HEAD
-import com.estimote.sdk.Beacon;
-import com.estimote.sdk.BeaconManager;
-import com.estimote.sdk.Region;
-
-import org.w3c.dom.Text;
-
-import java.util.List;
-=======
 import java.net.InterfaceAddress;
->>>>>>> cad639778bfc07c5864b4d5ea056fee015e25a98
 import java.util.UUID;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -49,14 +39,7 @@ public class MainActivity extends AppCompatActivity {
     private Button connBluetoothButton;
     private Button modifyInOrOutButton;
     private bluetooth bluetoothService_obj = null;
-<<<<<<< HEAD
-    private static final String TAG = "MAIN";
-=======
->>>>>>> cad639778bfc07c5864b4d5ea056fee015e25a98
     final static String SERV_URL = "http://211.222.232.176:3001";// server URL 상수 선언
-    private BeaconManager beaconManager;
-    private Region region;
-    private TextView beaconText;
 
     /* 최초 실행 검사 Service, 앱 실행시 인증을 통해 검사방식으로 대체 */
     /*
@@ -80,24 +63,6 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //비콘연결
-        beaconText=(TextView) findViewById(R.id.beaconText);
-        beaconManager = new BeaconManager(this);
-        beaconManager.setRangingListener(new BeaconManager.RangingListener()
-        {
-            @Override
-            public void onBeaconsDiscovered(Region region, List list)
-            {
-                if(!list.isEmpty())
-                {
-                    Log.d("Airdport", "Nearest place:"+list.get(0));
-                    beaconText.setText(list.get(0)+"");
-                }
-            }
-        });
-
-        region = new Region("Range region",UUID.fromString("23"), null, null);
-
         //CheckAppFirstExecute();//Bluetooth 연결 chk
         if (bluetooth.getDeviceState()) // 블루투스 기기의 지원여부가 true 일때
         {
@@ -118,11 +83,7 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-<<<<<<< HEAD
-        //3번 버튼
-=======
         //2번 버튼
->>>>>>> cad639778bfc07c5864b4d5ea056fee015e25a98
         modifyInOrOutButton = (Button) findViewById(R.id.modifybutton);
         modifyInOrOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -209,10 +170,10 @@ public class MainActivity extends AppCompatActivity {
                 //addUserLayout이라 작명한 Layout을 지정해야 id로부터 VIew를 받아 올 수 있으며, 지정해주지 않으면 nullpointerException 오류 발생
                 EditText houseNum = (EditText) addUserLayout.findViewById(R.id.input_house_num);
                 EditText password = (EditText) addUserLayout.findViewById(R.id.input_house_psw);
-                RadioButton inside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_in);
-                RadioButton outside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_out);
-                if (inside.isChecked()) where = 0;  //안이면 0
-                else if (outside.isChecked()) where = 1;//밖이면 1
+                //RadioButton inside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_in);
+                //RadioButton outside = (RadioButton) addUserLayout.findViewById(R.id.radiobtn_out);
+                //if (inside.isChecked()) where = 0;  //안이면 0
+                //else if (outside.isChecked()) where = 1;//밖이면 1
 
                 //생성시 인자로 정보들을 넘겨줌
                 AddUserBackgroundTask task = new AddUserBackgroundTask(houseNum.getText().toString(), password.getText().toString(), where);
@@ -376,14 +337,12 @@ public class MainActivity extends AppCompatActivity {
     /* BackgroundTask 기본 소스
     class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
         protected void onPreExecute() {
-
         }
         @Override
         protected Integer doInBackground(Integer... arg0) {
             // TODO Auto-generated method stub
             return null;
         }
-
         protected void onPostExecute(Integer a) {
         }
     }
