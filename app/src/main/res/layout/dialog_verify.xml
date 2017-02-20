@@ -1,52 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="50dp"
-        >
-        
+        android:padding="50dp">
+
         <TextView
+            android:id="@+id/house_number"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:text="집 호수"
-            android:id="@+id/house_number"
-            />
+            android:text="집 호수" />
 
         <EditText
+            android:id="@+id/input_house_num"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/input_house_num"
             android:imeOptions="actionNext"
-            android:inputType="text"
-            />
+            android:inputType="text" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="50dp"
-        >
+        android:padding="50dp">
 
         <TextView
+            android:id="@+id/house_password"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:text="집 비밀번호"
-            android:id="@+id/house_password"
-            />
+            android:text="집 비밀번호" />
 
         <EditText
+            android:id="@+id/input_house_psw"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/input_house_psw"
             android:imeOptions="actionDone"
-            android:inputType="text"
-            />
+            android:inputType="text" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="50dp">
+
+        <TextView
+            android:id="@+id/in_out"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="집안/밖" />
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/radiogrp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radiobtn_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Inside"
+                android:checked="true"
+                />
+
+            <RadioButton
+                android:id="@+id/radiobtn_out"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Outside"
+                />
+        </RadioGroup>
     </LinearLayout>
 </LinearLayout>
