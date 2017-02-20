@@ -26,6 +26,13 @@ import android.widget.Toast;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 
+import com.estimote.sdk.Beacon;
+import com.estimote.sdk.BeaconManager;
+import com.estimote.sdk.Region;
+
+import org.w3c.dom.Text;
+
+import java.util.List;
 import java.util.UUID;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -38,9 +45,11 @@ public class MainActivity extends AppCompatActivity {
     private Button connBluetoothButton;
     private Button modifyInOrOutButton;
     private bluetooth bluetoothService_obj = null;
-    //private Button verifybutton;
     private static final String TAG = "MAIN";
     final static String SERV_URL = "http://211.222.232.176:3001";// server URL 상수 선언
+    private BeaconManager beaconManager;
+    private Region region;
+    private TextView beaconText;
 
     private final Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -71,6 +80,24 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //비콘연결
+        beaconText=(TextView) findViewById(R.id.beaconText);
+        beaconManager = new BeaconManager(this);
+        beaconManager.setRangingListener(new BeaconManager.RangingListener()
+        {
+            @Override
+            public void onBeaconsDiscovered(Region region, List list)
+            {
+                if(!list.isEmpty())
+                {
+                    Log.d("Airdport", "Nearest place:"+list.get(0));
+                    beaconText.setText(list.get(0)+"");
+                }
+            }
+        });
+
+        region = new Region("Range region",UUID.fromString("23"), null, null);
+
         //CheckAppFirstExecute();//Bluetooth 연결 chk
         if(bluetooth.getDeviceState()) // 블루투스 기기의 지원여부가 true 일때
         {
@@ -86,17 +113,6 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothService_obj == null) {
             bluetoothService_obj = new bluetooth(this, mHandler);
         }
-
-        //2번 버튼
-        /*
-        verifybutton = (Button) findViewById(R.id.verifybutton);
-        verifybutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v2) {
-                verifyDialog();  //집 정보 입력 및 인증
-            }
-        });
-        */
 
         //3번 버튼
         modifyInOrOutButton = (Button) findViewById(R.id.modifybutton);
