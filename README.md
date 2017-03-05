@@ -1,3 +1,3 @@
-# BeaconTest
+# BeaconAutoDoor
 
-Beacon for Android Studio
+Verify resident using beacon and open AutoDoor
