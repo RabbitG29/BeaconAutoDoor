@@ -1,13 +1,19 @@
 package com.mfics.kdh.beaconautodoor;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.TelephonyManager;
@@ -41,6 +47,10 @@ public class MainActivity extends AppCompatActivity {
     private bluetooth bluetoothService_obj = null;
     final static String SERV_URL = "http://211.222.232.176:3001";// server URL 상수 선언
 
+    TextView mTxtOrient; //방향 sensor
+    SensorManager mSm;
+
+
     /* 최초 실행 검사 Service, 앱 실행시 인증을 통해 검사방식으로 대체 */
     /*
     public boolean CheckAppFirstExecute(){
@@ -63,13 +73,19 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mSm = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        mTxtOrient = (TextView)findViewById(R.id.orient_sensor);
+        chkAccessBackgroundTask chkAccessTask = new chkAccessBackgroundTask();
+        chkAccessTask.execute();
+
         //CheckAppFirstExecute();//Bluetooth 연결 chk
         if (bluetooth.getDeviceState()) // 블루투스 기기의 지원여부가 true 일때
         {
             bluetooth.firstEnableBluetooth();  //블루투스 활성화 시작.
         }
 
-        VerifyUUIDBackgroundTask task = new VerifyUUIDBackgroundTask();//앱 실행시 Verify
+        //앱 실행시 Verify
+        VerifyUUIDBackgroundTask task = new VerifyUUIDBackgroundTask();
         task.execute();
 
         //1번 버튼
@@ -110,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
         });
     }
+
 
     /* 오른쪽 상단 Menu 설정 */
     /*
@@ -333,6 +350,86 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+    class chkAccessBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        float[] mR = new float[9];
+        float[] mI = new float[9];
+        float[] mV = new float[9];
+        float[] mGravity = null;
+        float[] mGeometric = null;
+        String response = "";
+        String address = SERV_URL;
+        protected void onPreExecute() {
+            mSm.registerListener(mSeonsorListener, mSm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
+            mSm.registerListener(mSeonsorListener, mSm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_UI);
+        }
+        @Override
+        protected Integer doInBackground(Integer... arg0) {
+            // TODO Auto-generated method stub
+            SystemClock.sleep(500);
+            address = address + "/chkAccess?rotMatrix=" + columnMatrix(mR);
+            Log.e("response", address);
+            response = request(address);
+            return null;
+        }
+
+        protected void onPostExecute(Integer a) {
+        }
+
+        SensorEventListener mSeonsorListener = new SensorEventListener() {
+            @SuppressLint("SetTextI18n")
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                switch (event.sensor.getType()) {
+                    case Sensor.TYPE_ACCELEROMETER:
+                        mGravity = event.values.clone();
+                        break;
+                    case Sensor.TYPE_MAGNETIC_FIELD:
+                        mGeometric = event.values.clone();
+                        break;
+                }
+
+                if(mGravity != null && mGeometric != null) {
+                    SensorManager.getRotationMatrix(mR, mI, mGravity, mGeometric);
+                    //float inclination = SensorManager.getInclination(mI);
+                    SensorManager.getOrientation(mR, mV);
+
+                    mTxtOrient.setText(
+                            //"Gra : " + dumpValues(mGravity)
+                            //+ "\nMag : " + dumpValues(mGeometric)
+                            "R : \n" + dumpMatrix(mR)
+                            /*        + "\nI : \n" + dumpMatrix(mI)
+                                    + "\ninclination : " + inclination
+                                    + "\n\nRot : \n" + dumpMatrix(mV)
+                                    + "\n\nTop : "
+                                    + "\nx : " + String.format("%.3f", Math.cos(mV[0])*Math.cos(mV[1]))
+                                    + "\ny : " + String.format("%.3f", Math.sin(mV[0])*Math.cos(mV[1]))
+                                    + "\nz : " + String.format("%.3f", -Math.cos(mV[1]-Math.PI/2))
+
+                                    + "\n\nLeft : "
+                                    + "\nx : " + String.format("%.3f", -Math.cos(mV[0])*Math.sin(mV[1])*Math.sin(mV[2]) + Math.sin(mV[0])*Math.cos(mV[2]))
+                                    + "\ny : " + String.format("%.3f", -Math.sin(mV[0])*Math.sin(mV[1])*Math.sin(mV[2]) - Math.cos(mV[0])*Math.cos(mV[2]))
+                                    + "\nz : " + String.format("%.3f", Math.cos(mV[1])*Math.sin(mV[2]))
+
+                                    + "\n\nBack : "
+                                    + "\nx : " + String.format("%.3f", -Math.cos(mV[0])*Math.sin(mV[1])*Math.cos(mV[2]) + Math.sin(mV[0])*Math.sin(mV[2]))
+                                    + "\ny : " + String.format("%.3f", -Math.sin(mV[0])*Math.sin(mV[1])*Math.cos(mV[2]) - Math.cos(mV[0])*Math.sin(mV[2]))
+                                    + "\nz : " + String.format("%.3f", Math.cos(mV[1])*Math.sin(mV[2]-Math.PI/2))*/
+                    );
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            }
+        };
+        String dumpMatrix(float[] m) {
+            return String.format("%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n", m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
+        }
+        String columnMatrix(float[] m) {
+            return String.format("%.2f_%.2f_%.2f", m[0], m[1], m[2]);
+        }
+    }
+
 
     /* BackgroundTask 기본 소스
     class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
