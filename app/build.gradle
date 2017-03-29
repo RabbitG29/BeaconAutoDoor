@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.mfics.kdh.beaconautodoor"
-        minSdkVersion 16
+        minSdkVersion 15
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
@@ -30,5 +30,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.estimote:sdk:0.10.4@aar'
+    compile 'org.altbeacon:android-beacon-library:2+'
     testCompile 'junit:junit:4.12'
 }
