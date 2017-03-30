@@ -214,17 +214,20 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
     public void onBeaconServiceConnect() {
 
         beaconManager.addRangeNotifier(new RangeNotifier() {
-            //final TextView beaconText = (TextView) findViewById(R.id.beaconText);
+
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
                 if (beacons.size() > 0) {
                     Log.e("response", "Rssi : "+ beacons.iterator().next().getRssi());
                     Log.e("response", "The first beacon I see is about "+beacons.iterator().next().getDistance()+" meters away.");
-                    //beaconText.setText("인식됨");
+                    BeaconBackgroundTask btask = new BeaconBackgroundTask(beacons.iterator().next().getDistance());
+                    btask.execute();
+
+
                 }
                 else {
                     Log.e("reponse", "no beacon");
-                    //beaconText.setText("인식되지 않음");
+
                 }
             }
         });
@@ -318,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                 }
             }
         } catch (Exception ex) {
-            Log.e("SampleHTTP", "Exception in processing response.", ex);
+            //Log.e("SampleHTTP", "Exception in processing response.", ex);
             ex.printStackTrace();
         }
         //Log.e("response", "request finish");
@@ -538,9 +541,14 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
 
 
     //BackgroundTask 기본 소스
-    class BackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+    class BeaconBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
         String address = SERV_URL;
         String response;
+        double distanceBeacon;
+        String whereis, selected;
+        public BeaconBackgroundTask(double distance){
+            distanceBeacon=distance;
+        }
         protected void onPreExecute() {
             address = address+"인자";
         }
@@ -551,6 +559,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
             return null;
         }
         protected void onPostExecute(Integer a) {
+            TextView beaconText = (TextView) findViewById(R.id.beaconText);
+            beaconText.setText("인식됨, 비콘과의 거리 : "+distanceBeacon+"m");
+            if(distanceBeacon<3)
+            {
+                beaconText.setText("문열림, 비콘과의 거리 : "+distanceBeacon+"m");
+                //ModifyBackgroundTask modifyBackgroundTask = new ModifyBackgroundTask(whereis, selected);
+                //modifyBackgroundTask.execute();
+            }
+
             //통신후 작업
         }
     }

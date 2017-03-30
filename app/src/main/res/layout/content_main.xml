@@ -74,6 +74,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="15sp"
+        android:text="현재 인식되지 않음"
         android:id="@+id/beaconText"
         android:layout_below="@+id/textView"
         android:layout_marginBottom="30dp"
