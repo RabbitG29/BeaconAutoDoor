@@ -36,6 +36,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.mfics.kdh.beaconautodoor.MainActivity.SERV_URL;
+
 public class MainActivity extends AppCompatActivity implements BeaconConsumer{
 
     final static String SERV_PORT = "3002";
@@ -124,6 +126,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                 if (beacons.size() > 0) {
                     Log.e("response", "Rssi : "+ beacons.iterator().next().getRssi());      // Rssi : 거리
                     Log.e("response", "The first beacon I see is about "+beacons.iterator().next().getDistance()+" meters away.");
+                    BeaconBackgroundTask btask = new BeaconBackgroundTask(beacons.iterator().next().getDistance());
+                    btask.execute();
                 }
                 else {
                     Log.e("reponse", "no beacon");
@@ -344,4 +348,30 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
             }
         }
     }
+    /* beaon 인식 후 task*/
+    class BeaconBackgroundTask extends AsyncTask<Integer, Integer, Integer> {
+        String address = SERV_URL;
+        String response;
+        double distanceBeacon;
+        public BeaconBackgroundTask(double distance){
+            distanceBeacon=distance;
+        }
+        protected void onPreExecute() {
+            address = address+"인자";
+        }
+        @Override
+        protected Integer doInBackground(Integer... arg0) {
+            // TODO Auto-generated method stub
+            response = request(address);
+            return null;
+        }
+        protected void onPostExecute(Integer a) {
+            TextView beaconText = (TextView) findViewById(R.id.beaconText);
+            beaconText.setText("인식됨, 비콘과의 거리 : "+distanceBeacon+"m");
+            if(distanceBeacon<3) {
+                beaconText.setText("문열림, 비콘과의 거리 : " + distanceBeacon + "m");
+            }
+        }
+    }
+
 }
